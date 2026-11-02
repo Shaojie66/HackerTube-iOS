@@ -47,23 +47,35 @@ def merge_json3(events):
     return cues
 
 
-def ytdlp_subs(vid, tmp):
-    """返回 json3 events；先人工字幕再自动字幕。"""
+def ytdlp_subs(vid, tmp, duration=None):
+    """返回 json3 events；先人工字幕再自动字幕。
+
+    只要原生英文轨（en / en-US / en-GB / en-orig）。不能写 en.*：它会匹配几十条
+    "English from X" 机器翻译轨，每条都要单独请求，很快触发 429。
+    人工字幕如果只覆盖不到一半时长（有的上传者只传了开头），继续试自动字幕。
+    """
     url = f"https://www.youtube.com/watch?v={vid}"
+    best = None
     for flag in ("--write-subs", "--write-auto-subs"):
-        cmd = ["yt-dlp", "--skip-download", flag, "--sub-langs", "en.*,en", "--sub-format", "json3",
-               "-o", f"{tmp}/%(id)s.%(ext)s", url]
+        cmd = ["yt-dlp", "--no-update", "--skip-download", flag, "--sub-langs", "en,en-US,en-GB,en-orig",
+               "--sub-format", "json3", "-o", f"{tmp}/%(id)s.%(ext)s", url]
         subprocess.run(cmd, capture_output=True, text=True)
         files = sorted(Path(tmp).glob(f"{vid}*.json3"))
-        if files:
-            # 优先纯 en，而不是 en-xx 翻译轨
-            files.sort(key=lambda p: (".en." not in p.name, len(p.name)))
-            events = json.loads(files[0].read_text()).get("events", [])
-            for f in files:
-                f.unlink()
-            if events:
-                return events
-    return None
+        if not files:
+            continue
+        # 优先 en，其次 en-orig 等
+        files.sort(key=lambda p: (".en." not in p.name, len(p.name)))
+        events = json.loads(files[0].read_text()).get("events", [])
+        for f in files:
+            f.unlink()
+        if not events:
+            continue
+        end = max((e.get("tStartMs", 0) + e.get("dDurationMs", 0)) / 1000 for e in events)
+        if not duration or end >= duration * 0.5:
+            return events
+        if best is None or end > best[0]:
+            best = (end, events)
+    return best[1] if best else None
 
 
 def whisper_subs(vid, tmp):
@@ -101,7 +113,7 @@ def main():
             dst = out / f"{vid}.en.json"
             if dst.exists():
                 continue
-            events = ytdlp_subs(vid, tmp)
+            events = ytdlp_subs(vid, tmp, v.get("duration"))
             cues = merge_json3(events) if events else None
             if not cues and args.whisper:
                 cues = whisper_subs(vid, tmp)
