@@ -136,6 +136,8 @@ struct PlayerScreen: View {
             }
         case .unavailable:
             Label("这个视频暂时没有字幕", systemImage: "captions.bubble").font(.caption).foregroundStyle(.secondary)
+        case .ready where subs.hasNativeChinese:
+            Label("中文字幕来自视频作者", systemImage: "captions.bubble").font(.caption).foregroundStyle(.secondary)
         case .translationFailed(let msg):
             Label("中文翻译失败：\(msg)", systemImage: "exclamationmark.triangle").font(.caption).foregroundStyle(.orange)
         default:
@@ -176,7 +178,7 @@ struct SubtitleOverlay: View {
             if mode == .bilingual || mode == .chinese, let zh = cue.zh {
                 Text(zh).font(.system(size: 17 * scale, weight: .semibold))
             }
-            if mode == .bilingual || mode == .english || (mode == .chinese && cue.zh == nil) {
+            if !cue.en.isEmpty, mode == .bilingual || mode == .english || (mode == .chinese && cue.zh == nil) {
                 Text(cue.en).font(.system(size: (mode == .bilingual ? 14 : 16) * scale))
                     .foregroundStyle(.white.opacity(mode == .bilingual ? 0.85 : 1))
             }

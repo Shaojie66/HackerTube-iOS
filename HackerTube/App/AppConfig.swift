@@ -12,9 +12,9 @@ enum AppConfig {
     /// 远程视频目录（可选，有就覆盖 App 内置的那份）
     static var remoteCatalogURL: URL { cdnBase.appending(path: "data/catalog.json") }
 
-    /// 预生成的英文字幕
-    static func subtitleURL(for videoID: String) -> URL {
-        cdnBase.appending(path: "subtitles/\(videoID).en.json")
+    /// 预生成的字幕：en 是英文；zh 是视频作者上传的人工中文字幕（不是每个视频都有）
+    static func subtitleURL(for videoID: String, lang: String = "en") -> URL {
+        cdnBase.appending(path: "subtitles/\(videoID).\(lang).json")
     }
 
     /// YouTube 内嵌播放器需要一个合法的来源页，否则部分视频会报“播放器配置错误”。

@@ -40,6 +40,23 @@ actor SubtitleService {
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
     }
 
+    /// 视频作者上传的人工中文字幕（subtitles/<id>.zh.json），有就不用本机翻译。
+    /// 中文按自己的时间轴，不和英文逐句对齐，所以单独存：文字放在 zh 字段，en 留空。
+    func nativeChinese(for videoID: String) async -> [SubtitleCue] {
+        let cache = dir.appending(path: "\(videoID).zh.json")
+        if let data = try? Data(contentsOf: cache),
+           let cached = try? JSONDecoder().decode([SubtitleCue].self, from: data), !cached.isEmpty {
+            return cached
+        }
+        // 没有中文轨时不缓存空结果，仓库以后补上了还能取到
+        guard let (data, resp) = try? await URLSession.shared.data(from: AppConfig.subtitleURL(for: videoID, lang: "zh")),
+              (resp as? HTTPURLResponse)?.statusCode == 200,
+              let file = try? JSONDecoder().decode(SubtitleFile.self, from: data) else { return [] }
+        let cues = file.cues.enumerated().map { i, c in SubtitleCue(id: i, start: c.s, end: c.e, en: "", zh: c.t) }
+        if let data = try? JSONEncoder().encode(cues) { try? data.write(to: cache, options: .atomic) }
+        return cues
+    }
+
     // MARK: - 来源 1：仓库预生成的字幕
 
     private func fetchFromCDN(_ id: String) async throws -> [SubtitleCue] {

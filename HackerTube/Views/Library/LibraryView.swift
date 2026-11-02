@@ -183,7 +183,7 @@ struct SettingsView: View {
                     .frame(maxWidth: .infinity)
                     .listRowBackground(Color.gray.opacity(0.4))
             } header: { Text("字幕") } footer: {
-                Text("中文字幕由 iOS 自带的翻译功能在本机生成，免费、离线可用。第一次使用时系统会提示下载中英翻译语言包。")
+                Text("优先用视频自带的中文字幕，没有时由 iOS 自带翻译在本机生成。第一次使用本机翻译时，系统会提示下载中英翻译语言包。")
             }
             Section {
                 Button(cleared ? "已清除" : "清除字幕缓存") {

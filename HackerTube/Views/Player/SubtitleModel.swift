@@ -27,6 +27,9 @@ final class SubtitleModel {
 
     let videoID: String
     private(set) var cues: [SubtitleCue] = []
+    /// 视频自带的人工中文字幕；有的话中文直接用它，不再翻译
+    private(set) var nativeZh: [SubtitleCue] = []
+    var hasNativeChinese: Bool { !nativeZh.isEmpty }
     private(set) var status: Status = .idle
     /// 设置后会触发 SwiftUI 的 .translationTask
     var translationConfig: TranslationSession.Configuration?
@@ -36,21 +39,22 @@ final class SubtitleModel {
     func load() async {
         guard status == .idle else { return }
         status = .loading
-        do {
-            cues = try await SubtitleService.shared.cues(for: videoID)
-            status = .ready
-            if cues.contains(where: { $0.zh == nil }) {
-                translationConfig = TranslationSession.Configuration(
-                    source: Locale.Language(identifier: "en"),
-                    target: Locale.Language(identifier: "zh-Hans"))
-            }
-        } catch {
-            status = .unavailable
+        async let en: [SubtitleCue]? = try? SubtitleService.shared.cues(for: videoID)
+        async let zh = SubtitleService.shared.nativeChinese(for: videoID)
+        cues = await en ?? []
+        nativeZh = await zh
+        guard !cues.isEmpty || !nativeZh.isEmpty else { status = .unavailable; return }
+        status = .ready
+        if nativeZh.isEmpty, cues.contains(where: { $0.zh == nil }) {
+            translationConfig = TranslationSession.Configuration(
+                source: Locale.Language(identifier: "en"),
+                target: Locale.Language(identifier: "zh-Hans"))
         }
     }
 
     /// 在 .translationTask 闭包里调用。从当前播放位置开始先翻，再回头翻前面的，用户马上就能看到中文。
     func translate(using session: TranslationSession, from time: Double) async {
+        guard nativeZh.isEmpty else { return }
         let pending = cues.indices.filter { cues[$0].zh == nil }
         guard !pending.isEmpty else { return }
         let pivot = pending.firstIndex { cues[$0].end >= time } ?? 0
@@ -82,7 +86,14 @@ final class SubtitleModel {
         }
     }
 
-    func cue(at time: Double) -> SubtitleCue? { cues.cue(at: time) }
+    /// 当前要显示的一句。有自带中文时，中英各按自己的时间轴找，再拼成一条给字幕层显示。
+    func cue(at time: Double) -> SubtitleCue? {
+        guard !nativeZh.isEmpty else { return cues.cue(at: time) }
+        let en = cues.cue(at: time), zh = nativeZh.cue(at: time)
+        guard en != nil || zh != nil else { return nil }
+        return SubtitleCue(id: (en?.id ?? -1) &* 100_000 &+ (zh?.id ?? -1),
+                           start: time, end: time, en: en?.en ?? "", zh: zh?.zh)
+    }
 }
 
 extension Array {
