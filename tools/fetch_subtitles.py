@@ -10,7 +10,7 @@
 优先用人工上传的英文字幕，其次 YouTube 自动字幕，都没有时（加 --whisper）才转写。
 已存在的文件会跳过，可以随时中断再续跑。
 """
-import argparse, json, os, re, subprocess, sys, tempfile, time
+import argparse, json, os, random, re, subprocess, sys, tempfile, time
 from pathlib import Path
 
 
@@ -107,7 +107,8 @@ def main():
     ap.add_argument("--out", default="subtitles")
     ap.add_argument("--whisper", action="store_true")
     ap.add_argument("--limit", type=int, default=0)
-    ap.add_argument("--sleep", type=float, default=1.0, help="每个视频之间的间隔，避免被限流")
+    ap.add_argument("--sleep-min", type=float, default=15.0, help="每个视频之间随机等待的下限（秒）")
+    ap.add_argument("--sleep-max", type=float, default=40.0, help="每个视频之间随机等待的上限（秒）")
     ap.add_argument("--backoff", type=int, default=600, help="遇到 429 时暂停的秒数（连续出现会加倍，最多 3 倍）")
     ap.add_argument("--retry-missing", action="store_true", help="重试 _missing.txt 里的视频")
     args = ap.parse_args()
@@ -152,7 +153,7 @@ def main():
                 missing_file.write_text("\n".join(sorted(missing)) + "\n")
                 print(f"✗ {vid} 没有字幕", flush=True)
             done += 1
-            time.sleep(args.sleep)
+            time.sleep(random.uniform(args.sleep_min, args.sleep_max))  # 随机间隔，避免连发触发 429
     if missing:
         missing_file.write_text("\n".join(sorted(missing)) + "\n")
 

@@ -6,7 +6,7 @@ cd "$(dirname "$0")/.." || exit 1
 BATCH=${BATCH:-300}
 while true; do
   echo "=== $(date '+%F %T') 开始新一批（$BATCH 个）"
-  python3 -I tools/fetch_subtitles.py data/catalog.json --out subtitles --sleep 3 --limit "$BATCH"
+  python3 -I tools/fetch_subtitles.py data/catalog.json --out subtitles --sleep-min 15 --sleep-max 40 --limit "$BATCH"
   rc=$?
   n=$(ls subtitles/*.en.json 2>/dev/null | wc -l | tr -d ' ')
   m=$(wc -l < subtitles/_missing.txt 2>/dev/null | tr -d ' ')
