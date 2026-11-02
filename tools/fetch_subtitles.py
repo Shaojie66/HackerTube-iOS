@@ -14,6 +14,15 @@ import argparse, json, os, re, subprocess, sys, tempfile, time
 from pathlib import Path
 
 
+class RateLimited(Exception):
+    """YouTube 返回 429 或要求“证明不是机器人”，不能当成“没有字幕”。"""
+
+
+def check_blocked(stderr):
+    if "HTTP Error 429" in stderr or "Too Many Requests" in stderr or "not a bot" in stderr:
+        raise RateLimited(stderr.strip().splitlines()[-1] if stderr.strip() else "429")
+
+
 def merge_json3(events):
     """自动字幕是逐词出现的，合并成完整句子。"""
     raw = []
@@ -59,9 +68,10 @@ def ytdlp_subs(vid, tmp, duration=None):
     for flag in ("--write-subs", "--write-auto-subs"):
         cmd = ["yt-dlp", "--no-update", "--skip-download", flag, "--sub-langs", "en,en-US,en-GB,en-orig",
                "--sub-format", "json3", "-o", f"{tmp}/%(id)s.%(ext)s", url]
-        subprocess.run(cmd, capture_output=True, text=True)
+        r = subprocess.run(cmd, capture_output=True, text=True)
         files = sorted(Path(tmp).glob(f"{vid}*.json3"))
         if not files:
+            check_blocked(r.stderr)
             continue
         # 优先 en，其次 en-orig 等
         files.sort(key=lambda p: (".en." not in p.name, len(p.name)))
@@ -98,38 +108,53 @@ def main():
     ap.add_argument("--whisper", action="store_true")
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--sleep", type=float, default=1.0, help="每个视频之间的间隔，避免被限流")
+    ap.add_argument("--backoff", type=int, default=600, help="遇到 429 时暂停的秒数（连续出现会加倍，最多 3 倍）")
+    ap.add_argument("--retry-missing", action="store_true", help="重试 _missing.txt 里的视频")
     args = ap.parse_args()
 
     videos = json.load(open(args.catalog))["videos"]
     videos.sort(key=lambda v: -(v.get("mentions") or 0))  # 热门视频优先
     out = Path(args.out); out.mkdir(parents=True, exist_ok=True)
-    missing = []
-    done = 0
+    # 确认没有字幕的视频记在 _missing.txt，续跑时跳过（加 --retry-missing 重试）
+    missing_file = out / "_missing.txt"
+    missing = set(missing_file.read_text().split()) if missing_file.exists() else set()
+    todo = [v for v in videos if not (out / f"{v['id']}.en.json").exists()
+            and (args.retry_missing or v["id"] not in missing)]
+    print(f"待处理 {len(todo)} 个（已完成 {len(videos) - len(todo) - len(missing)}，确认无字幕 {len(missing)}）", flush=True)
+    if not todo:
+        sys.exit(3)
+    done, blocked = 0, 0
     with tempfile.TemporaryDirectory() as tmp:
-        for i, v in enumerate(videos):
+        for v in todo:
             if args.limit and done >= args.limit:
                 break
             vid = v["id"]
             dst = out / f"{vid}.en.json"
-            if dst.exists():
-                continue
-            events = ytdlp_subs(vid, tmp, v.get("duration"))
-            cues = merge_json3(events) if events else None
-            if not cues and args.whisper:
-                cues = whisper_subs(vid, tmp)
+            try:
+                events = ytdlp_subs(vid, tmp, v.get("duration"))
+                cues = merge_json3(events) if events else None
+                if not cues and args.whisper:
+                    cues = whisper_subs(vid, tmp)
+            except RateLimited as e:
+                blocked += 1
+                wait = args.backoff * min(blocked, 3)
+                print(f"⚠ {vid} 被限流（第 {blocked} 次）：{e}；暂停 {wait // 60} 分钟", flush=True)
+                time.sleep(wait)
+                continue  # 不算完成，下一轮再试
+            blocked = 0
             if cues:
                 dst.write_text(json.dumps({"videoID": vid, "lang": "en", "cues": cues},
                                           ensure_ascii=False, separators=(",", ":")))
-                print(f"[{i+1}/{len(videos)}] ✓ {vid} {len(cues)} 句")
+                missing.discard(vid)
+                print(f"✓ {vid} {len(cues)} 句", flush=True)
             else:
-                missing.append(vid)
-                print(f"[{i+1}/{len(videos)}] ✗ {vid} 没有字幕")
+                missing.add(vid)
+                missing_file.write_text("\n".join(sorted(missing)) + "\n")
+                print(f"✗ {vid} 没有字幕", flush=True)
             done += 1
             time.sleep(args.sleep)
     if missing:
-        Path(out / "_missing.txt").write_text("\n".join(missing))
-        print(f"{len(missing)} 个视频没有字幕，列表见 {out}/_missing.txt")
-
+        missing_file.write_text("\n".join(sorted(missing)) + "\n")
 
 if __name__ == "__main__":
     main()
