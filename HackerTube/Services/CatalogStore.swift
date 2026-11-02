@@ -26,15 +26,11 @@ final class CatalogStore {
         }
 
         // 后台尝试拉取最新目录
-        do {
-            let (data, resp) = try await URLSession.shared.data(from: AppConfig.remoteCatalogURL)
-            if (resp as? HTTPURLResponse)?.statusCode == 200, let catalog = decode(data),
-               catalog.videos.count >= videos.count {
-                try? data.write(to: cacheURL)
-                apply(catalog)
-            }
-        } catch {
-            // 离线或 CDN 还没有数据，用本地的就行
+        // 离线或镜像都连不上时，用本地的就行
+        if case .data(let data) = await RepoFetcher.fetch(AppConfig.catalogPath),
+           let catalog = decode(data), catalog.videos.count >= videos.count {
+            try? data.write(to: cacheURL)
+            apply(catalog)
         }
     }
 

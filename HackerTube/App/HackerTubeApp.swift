@@ -4,13 +4,16 @@ import SwiftUI
 struct HackerTubeApp: App {
     @State private var catalog = CatalogStore()
     @State private var library = LibraryStore()
+    @State private var subtitleIndex = SubtitleIndex()
 
     var body: some Scene {
         WindowGroup {
             RootView()
                 .environment(catalog)
                 .environment(library)
+                .environment(subtitleIndex)
                 .task { await catalog.load() }
+                .task { await subtitleIndex.load() }
                 .tint(.orange)   // HN 橙
         }
     }

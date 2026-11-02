@@ -43,6 +43,7 @@ struct VideoRow: View {
 
 struct Thumbnail: View {
     let video: Video
+    @Environment(SubtitleIndex.self) private var subtitleIndex
     var body: some View {
         // hq2.jpg 是 4:3 带上下黑边的图，按 16:9 填充裁掉黑边
         Color.clear
@@ -60,6 +61,17 @@ struct Thumbnail: View {
                     .font(.caption2.monospacedDigit().weight(.semibold))
                     .padding(.horizontal, 4).padding(.vertical, 1)
                     .background(.black.opacity(0.75), in: RoundedRectangle(cornerRadius: 3))
+                    .foregroundStyle(.white)
+                    .padding(5)
+            }
+        }
+        .overlay(alignment: .topLeading) {
+            // 已有字幕的视频可以看双语
+            if subtitleIndex.has(video.id) {
+                Text("CC")
+                    .font(.caption2.weight(.bold))
+                    .padding(.horizontal, 4).padding(.vertical, 1)
+                    .background(.orange, in: RoundedRectangle(cornerRadius: 3))
                     .foregroundStyle(.white)
                     .padding(5)
             }

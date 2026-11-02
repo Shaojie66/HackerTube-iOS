@@ -49,20 +49,21 @@ actor SubtitleService {
             return cached
         }
         // 没有中文轨时不缓存空结果，仓库以后补上了还能取到
-        guard let (data, resp) = try? await URLSession.shared.data(from: AppConfig.subtitleURL(for: videoID, lang: "zh")),
-              (resp as? HTTPURLResponse)?.statusCode == 200,
+        guard case .data(let data) = await RepoFetcher.fetch(AppConfig.subtitlePath(for: videoID, lang: "zh")),
               let file = try? JSONDecoder().decode(SubtitleFile.self, from: data) else { return [] }
         let cues = file.cues.enumerated().map { i, c in SubtitleCue(id: i, start: c.s, end: c.e, en: "", zh: c.t) }
         if let data = try? JSONEncoder().encode(cues) { try? data.write(to: cache, options: .atomic) }
         return cues
     }
 
-    // MARK: - 来源 1：仓库预生成的字幕
+    // MARK: - 来源 1：仓库预生成的字幕（多镜像）
 
     private func fetchFromCDN(_ id: String) async throws -> [SubtitleCue] {
-        let (data, resp) = try await URLSession.shared.data(from: AppConfig.subtitleURL(for: id))
-        guard (resp as? HTTPURLResponse)?.statusCode == 200,
-              let file = try? JSONDecoder().decode(SubtitleFile.self, from: data) else { return [] }
+        guard case .data(let data) = await RepoFetcher.fetch(AppConfig.subtitlePath(for: id)) else { return [] }
+        guard let file = try? JSONDecoder().decode(SubtitleFile.self, from: data) else {
+            netLog.error("字幕解析失败：\(id, privacy: .public)")
+            return []
+        }
         return file.cues.enumerated().map { i, c in
             SubtitleCue(id: i, start: c.s, end: c.e, en: c.t)
         }

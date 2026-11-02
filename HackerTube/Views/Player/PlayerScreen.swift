@@ -135,7 +135,7 @@ struct PlayerScreen: View {
                 Text("正在本机翻译中文字幕 \(done)/\(total)").font(.caption).foregroundStyle(.secondary)
             }
         case .unavailable:
-            Label("这个视频暂时没有字幕", systemImage: "captions.bubble").font(.caption).foregroundStyle(.secondary)
+            Label("这个视频的字幕还在准备中，带 CC 标记的视频可以看双语", systemImage: "captions.bubble").font(.caption).foregroundStyle(.secondary)
         case .ready where subs.hasNativeChinese:
             Label("中文字幕来自视频作者", systemImage: "captions.bubble").font(.caption).foregroundStyle(.secondary)
         case .translationFailed(let msg):
