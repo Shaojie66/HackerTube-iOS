@@ -1,0 +1,10 @@
+{
+  "version": 0,
+  "note": "示例数据，拿到 HackerTube 导出包后用 tools/build_catalog.py 生成完整目录替换",
+  "videos": [
+    {"id": "kCc8FmEb1nY", "title": "Let's build GPT: from scratch, in code, spelled out.", "channel": "Andrej Karpathy", "duration": 6980, "published": "2023-01-17", "categories": ["Machine Learning", "Programming"], "mentions": null, "hnURL": null},
+    {"id": "zjkBMFhNj_g", "title": "[1hr Talk] Intro to Large Language Models", "channel": "Andrej Karpathy", "duration": 3588, "published": "2023-11-22", "categories": ["Machine Learning"], "mentions": null, "hnURL": null},
+    {"id": "aircAruvnKk", "title": "But what is a neural network? | Deep learning chapter 1", "channel": "3Blue1Brown", "duration": 1153, "published": "2017-10-05", "categories": ["Machine Learning", "Mathematics"], "mentions": null, "hnURL": null},
+    {"id": "LnzuMJLZRdU", "title": "\"Hello, world\" from scratch on a 6502 — Part 1", "channel": "Ben Eater", "duration": 1640, "published": "2019-04-12", "categories": ["Electronics", "Computer Architecture"], "mentions": null, "hnURL": null}
+  ]
+}
