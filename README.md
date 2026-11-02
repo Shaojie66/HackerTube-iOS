@@ -18,6 +18,10 @@
 
 > 这是个人做的非官方客户端，和 HackerTube 网站及其作者没有关联。视频目录来自网站公开的数据导出包。
 
+| 首页 | 分类 | 播放页：中英双字幕 |
+|---|---|---|
+| ![首页](screenshots/home.png) | ![分类页，「有字幕」排在最上面](screenshots/categories.png) | ![3Blue1Brown 线性代数第 1 集，中英两行字幕](screenshots/player.png) |
+
 ## 它解决什么问题
 
 HackerTube 是 Andrej Karpathy 的周末项目：从 Hacker News 二十年的评论里，筛出被反复推荐的 YouTube 视频。内容很好，但几乎全是英文，网页上也没有中文字幕。

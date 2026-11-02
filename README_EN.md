@@ -23,6 +23,10 @@ Computerphile in Chinese find it.
 > An unofficial, personal client. It is not affiliated with the HackerTube site
 > or its author. The video catalogue comes from the site's public data export.
 
+| Home | Categories | Player with bilingual subtitles |
+|---|---|---|
+| ![Home](screenshots/home.png) | ![Categories, with "has subtitles" at the top](screenshots/categories.png) | ![3Blue1Brown's Essence of linear algebra, chapter 1, with Chinese and English lines](screenshots/player.png) |
+
 ## Why
 
 HackerTube is a weekend project by Andrej Karpathy: it mines twenty years of
