@@ -12,6 +12,7 @@
 [![Stars](https://img.shields.io/github/stars/Shaojie66/HackerTube-iOS?style=flat)](https://github.com/Shaojie66/HackerTube-iOS/stargazers)
 [![平台](https://img.shields.io/badge/iOS-18%2B-black)](#自己编译安装)
 [![Swift](https://img.shields.io/badge/Swift-5.10%20%C2%B7%20SwiftUI-orange)](project.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Issues](https://img.shields.io/github/issues/Shaojie66/HackerTube-iOS)](https://github.com/Shaojie66/HackerTube-iOS/issues)
 [![Last commit](https://img.shields.io/github/last-commit/Shaojie66/HackerTube-iOS)](https://github.com/Shaojie66/HackerTube-iOS/commits/main)
 
@@ -97,7 +98,7 @@ python3 tools/fetch_zh_subtitles.py data/catalog.json --out subtitles
 - 视频筛选和数据来自 Andrej Karpathy 的 [HackerTube](https://hackertube.org/)。
 - 视频本身由 YouTube 内嵌播放器播放，版权归各自作者。
 
-仓库目前还没有添加许可证文件。
+代码以 [MIT 许可证](LICENSE) 发布。`data/` 里的视频目录来自 HackerTube 的公开数据，`subtitles/` 里的字幕来自各视频在 YouTube 上的字幕，这两部分不属于 MIT 授权，权利归原作者。
 
 ---
 

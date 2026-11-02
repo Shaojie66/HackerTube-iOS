@@ -16,6 +16,7 @@ Computerphile in Chinese find it.
 [![Stars](https://img.shields.io/github/stars/Shaojie66/HackerTube-iOS?style=flat)](https://github.com/Shaojie66/HackerTube-iOS/stargazers)
 [![Platform](https://img.shields.io/badge/iOS-18%2B-black)](#build-and-install)
 [![Swift](https://img.shields.io/badge/Swift-5.10%20%C2%B7%20SwiftUI-orange)](project.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Issues](https://img.shields.io/github/issues/Shaojie66/HackerTube-iOS)](https://github.com/Shaojie66/HackerTube-iOS/issues)
 [![Last commit](https://img.shields.io/github/last-commit/Shaojie66/HackerTube-iOS)](https://github.com/Shaojie66/HackerTube-iOS/commits/main)
 
@@ -131,7 +132,7 @@ when you run it again.
 - Video selection and data: [HackerTube](https://hackertube.org/) by Andrej Karpathy.
 - Videos play in YouTube's embedded player and belong to their creators.
 
-The repository has no licence file yet.
+The code is released under the [MIT License](LICENSE). The catalogue in `data/` comes from HackerTube's public data, and the subtitles in `subtitles/` come from each video's YouTube captions; neither is covered by the MIT License, and both belong to their original owners.
 
 ---
 
