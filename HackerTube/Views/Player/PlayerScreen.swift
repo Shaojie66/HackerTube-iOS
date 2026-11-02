@@ -44,6 +44,10 @@ struct PlayerScreen: View {
             }
         }
         .navigationBarTitleDisplayMode(.inline)
+        // 播放器上方是黑底：导航栏也用黑底，状态栏的时间和信号才会变成白色、看得清
+        .toolbarBackground(.black, for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
+        .toolbarColorScheme(.dark, for: .navigationBar)
         .toolbar { subtitleMenu }
         .task {
             if startAt == 0 { startAt = library.lastPosition(video.id) }
