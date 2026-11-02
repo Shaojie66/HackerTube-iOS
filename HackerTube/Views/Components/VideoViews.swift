@@ -44,12 +44,16 @@ struct VideoRow: View {
 struct Thumbnail: View {
     let video: Video
     var body: some View {
-        AsyncImage(url: video.thumbnailURL) { phase in
-            if let img = phase.image { img.resizable().scaledToFill() }
-            else { Rectangle().fill(.quaternary) }
-        }
-        .aspectRatio(16 / 9, contentMode: .fit)
-        .clipped()
+        // hq2.jpg 是 4:3 带上下黑边的图，按 16:9 填充裁掉黑边
+        Color.clear
+            .aspectRatio(16 / 9, contentMode: .fit)
+            .overlay {
+                AsyncImage(url: video.thumbnailURL) { phase in
+                    if let img = phase.image { img.resizable().scaledToFill() }
+                    else { Rectangle().fill(.quaternary) }
+                }
+            }
+            .clipped()
         .overlay(alignment: .bottomTrailing) {
             if !video.durationText.isEmpty {
                 Text(video.durationText)

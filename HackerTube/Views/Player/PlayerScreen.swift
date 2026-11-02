@@ -57,6 +57,7 @@ struct PlayerScreen: View {
         }
         .onDisappear { library.recordWatch(video.id, position: player.currentTime) }
         .sheet(isPresented: $showPlaylistPicker) { PlaylistPicker(videoID: video.id) }
+        .toolbar(.hidden, for: .tabBar)   // 播放页不显示底部标签栏，避免盖住相关视频
     }
 
     // MARK: 播放器 + 字幕层
