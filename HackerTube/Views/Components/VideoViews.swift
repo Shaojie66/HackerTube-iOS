@@ -68,7 +68,7 @@ struct Thumbnail: View {
         .overlay(alignment: .topLeading) {
             // 已有字幕的视频可以看双语
             if subtitleIndex.has(video.id) {
-                Text("CC")
+                Text(subtitleIndex.hasChinese(video.id) ? "CC 中" : "CC")
                     .font(.caption2.weight(.bold))
                     .padding(.horizontal, 4).padding(.vertical, 1)
                     .background(.orange, in: RoundedRectangle(cornerRadius: 3))

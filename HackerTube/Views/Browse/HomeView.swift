@@ -3,6 +3,7 @@ import SwiftUI
 struct HomeView: View {
     @Environment(CatalogStore.self) private var catalog
     @Environment(LibraryStore.self) private var library
+    @Environment(SubtitleIndex.self) private var subtitleIndex
     @State private var chip: String? = nil
 
     var body: some View {
@@ -48,6 +49,10 @@ struct HomeView: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
                 chipButton("全部", selected: chip == nil) { chip = nil }
+                if !subtitleIndex.withSubtitles.isEmpty {
+                    let name = SubtitleIndex.categoryName
+                    chipButton(name, selected: chip == name) { chip = name }
+                }
                 ForEach(catalog.categories.prefix(20), id: \.name) { c in
                     chipButton(c.name, selected: chip == c.name) { chip = c.name }
                 }
@@ -68,6 +73,7 @@ struct HomeView: View {
     }
 
     private var feed: [Video] {
+        if chip == SubtitleIndex.categoryName { return catalog.videos(ids: subtitleIndex.withSubtitles) }
         if let chip { return catalog.videos(in: chip) }
         return catalog.recommendations(library: library)
     }
@@ -100,11 +106,23 @@ struct LongsView: View {
 
 struct CategoriesView: View {
     @Environment(CatalogStore.self) private var catalog
+    @Environment(SubtitleIndex.self) private var subtitleIndex
 
     var body: some View {
-        List(catalog.categories, id: \.name) { c in
-            NavigationLink(value: CategoryRoute(name: c.name)) {
-                LabeledContent(c.name, value: "\(c.count)")
+        List {
+            if !subtitleIndex.withSubtitles.isEmpty {
+                NavigationLink(value: CategoryRoute(name: SubtitleIndex.categoryName)) {
+                    LabeledContent {
+                        Text("\(catalog.videos(ids: subtitleIndex.withSubtitles).count)")
+                    } label: {
+                        Label(SubtitleIndex.categoryName, systemImage: "captions.bubble.fill")
+                    }
+                }
+            }
+            ForEach(catalog.categories, id: \.name) { c in
+                NavigationLink(value: CategoryRoute(name: c.name)) {
+                    LabeledContent(c.name, value: "\(c.count)")
+                }
             }
         }
         .navigationTitle("分类")
@@ -114,7 +132,11 @@ struct CategoriesView: View {
 struct CategoryDetailView: View {
     let name: String
     @Environment(CatalogStore.self) private var catalog
+    @Environment(SubtitleIndex.self) private var subtitleIndex
     @State private var sort: Sort = .popular
+    @State private var onlyChinese = false
+
+    private var isSubtitled: Bool { name == SubtitleIndex.categoryName }
 
     enum Sort: String, CaseIterable { case popular = "最多推荐", newest = "最新", oldest = "最早", longest = "最长" }
 
@@ -126,12 +148,17 @@ struct CategoryDetailView: View {
                     Picker("排序", selection: $sort) {
                         ForEach(Sort.allCases, id: \.self) { Text($0.rawValue) }
                     }
+                    if isSubtitled {
+                        Toggle("只看作者中文字幕", isOn: $onlyChinese)
+                    }
                 } label: { Image(systemName: "arrow.up.arrow.down") }
             }
     }
 
     private var sorted: [Video] {
-        let vs = catalog.videos(in: name)
+        let vs = isSubtitled
+            ? catalog.videos(ids: onlyChinese ? subtitleIndex.withChinese : subtitleIndex.withSubtitles)
+            : catalog.videos(in: name)
         switch sort {
         case .popular: return vs
         case .newest: return vs.sorted { ($0.published ?? "") > ($1.published ?? "") }
@@ -152,6 +179,7 @@ struct SearchView: View {
         .listStyle(.plain)
         .overlay {
             if query.isEmpty { EmptyHint(title: "搜索视频", systemImage: "magnifyingglass", message: "按标题或频道名搜索") }
+            else if catalog.search(query).isEmpty { ContentUnavailableView.search(text: query) }
         }
         .searchable(text: $query, prompt: "标题或频道")
         .navigationTitle("搜索")

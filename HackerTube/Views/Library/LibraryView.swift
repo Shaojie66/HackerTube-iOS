@@ -4,6 +4,8 @@ struct LibraryView: View {
     @Environment(LibraryStore.self) private var library
     @State private var newPlaylistName = ""
     @State private var showNewPlaylist = false
+    @State private var renaming: Playlist?
+    @State private var renameText = ""
 
     var body: some View {
         List {
@@ -23,6 +25,10 @@ struct LibraryView: View {
                     NavigationLink(value: p.id) {
                         LabeledContent(p.name, value: "\(p.videoIDs.count)")
                     }
+                    .contextMenu {
+                        Button { renameText = p.name; renaming = p } label: { Label("重命名", systemImage: "pencil") }
+                        Button(role: .destructive) { library.deletePlaylist(p.id) } label: { Label("删除", systemImage: "trash") }
+                    }
                 }
                 .onDelete { idx in idx.map { library.playlists[$0].id }.forEach(library.deletePlaylist) }
                 Button { showNewPlaylist = true } label: { Label("新建播放列表", systemImage: "plus") }
@@ -40,6 +46,15 @@ struct LibraryView: View {
                 newPlaylistName = ""
             }
             Button("取消", role: .cancel) { newPlaylistName = "" }
+        }
+        .alert("重命名播放列表", isPresented: Binding(get: { renaming != nil }, set: { if !$0 { renaming = nil } })) {
+            TextField("名称", text: $renameText)
+            Button("保存") {
+                let n = renameText.trimmingCharacters(in: .whitespaces)
+                if let p = renaming, !n.isEmpty { library.renamePlaylist(p.id, to: n) }
+                renaming = nil
+            }
+            Button("取消", role: .cancel) { renaming = nil }
         }
     }
 }

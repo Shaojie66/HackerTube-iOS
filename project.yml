@@ -18,6 +18,7 @@ targets:
       path: HackerTube/Info.plist
       properties:
         CFBundleDisplayName: HackerTube
+        CFBundleDevelopmentRegion: zh-Hans
         UILaunchScreen: {}
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
@@ -29,3 +30,24 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: org.hackertube.ios
         TARGETED_DEVICE_FAMILY: "1,2"
         GENERATE_INFOPLIST_FILE: YES
+  HackerTubeUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: HackerTubeUITests
+    dependencies:
+      - target: HackerTube
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: org.hackertube.ios.uitests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: HackerTube
+schemes:
+  HackerTube:
+    build:
+      targets:
+        HackerTube: all
+        HackerTubeUITests: [test]
+    test:
+      targets:
+        - HackerTubeUITests

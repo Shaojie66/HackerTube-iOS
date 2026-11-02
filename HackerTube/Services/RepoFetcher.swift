@@ -46,9 +46,15 @@ enum RepoFetcher {
 @Observable
 @MainActor
 final class SubtitleIndex {
+    /// 分类页和首页里“有字幕”这一项的名字
+    static let categoryName = "有字幕"
+
     private(set) var withSubtitles: Set<String> = []
+    /// 其中有视频作者上传的中文字幕的
+    private(set) var withChinese: Set<String> = []
 
     func has(_ id: String) -> Bool { withSubtitles.contains(id) }
+    func hasChinese(_ id: String) -> Bool { withChinese.contains(id) }
 
     func load() async {
         for url in AppConfig.fileListURLs {
@@ -57,12 +63,15 @@ final class SubtitleIndex {
             // jsDelivr: files[].name = "/subtitles/x.en.json"；GitHub: tree[].path = "subtitles/x.en.json"
             let names = ((obj["files"] as? [[String: Any]])?.compactMap { $0["name"] as? String })
                 ?? ((obj["tree"] as? [[String: Any]])?.compactMap { $0["path"] as? String }) ?? []
-            let ids = names.compactMap { n -> String? in
-                let n = n.hasPrefix("/") ? String(n.dropFirst()) : n
-                guard n.hasPrefix("subtitles/"), n.hasSuffix(".en.json") || n.hasSuffix(".zh.json") else { return nil }
-                return String(n.dropFirst("subtitles/".count).dropLast(".en.json".count))
+            var all = Set<String>(), zh = Set<String>()
+            for raw in names {
+                let n = raw.hasPrefix("/") ? String(raw.dropFirst()) : raw
+                guard n.hasPrefix("subtitles/"), n.hasSuffix(".en.json") || n.hasSuffix(".zh.json") else { continue }
+                let id = String(n.dropFirst("subtitles/".count).dropLast(".en.json".count))
+                all.insert(id)
+                if n.hasSuffix(".zh.json") { zh.insert(id) }
             }
-            if !ids.isEmpty { withSubtitles = Set(ids); return }
+            if !all.isEmpty { withSubtitles = all; withChinese = zh; return }
         }
     }
 }

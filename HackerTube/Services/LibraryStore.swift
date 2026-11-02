@@ -19,7 +19,17 @@ final class LibraryStore {
 
     private let fileURL = URL.documentsDirectory.appending(path: "library.json")
 
-    init() { load() }
+    init() {
+        #if DEBUG
+        // UI 测试用：-uitest-reset 清空本地数据；-uitest-history 种一条看到 2 分钟的记录（fNk_zzaMoSs，约 10 分钟）
+        let args = ProcessInfo.processInfo.arguments
+        if args.contains("-uitest-reset") { try? FileManager.default.removeItem(at: fileURL) }
+        load()
+        if args.contains("-uitest-history") { recordWatch("fNk_zzaMoSs", position: 120) }
+        #else
+        load()
+        #endif
+    }
 
     // MARK: 喜欢
     func isLiked(_ id: String) -> Bool { likedIDs.contains(id) }

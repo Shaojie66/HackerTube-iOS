@@ -50,6 +50,11 @@ final class CatalogStore {
         videos.filter { $0.categories.contains(category) }.sorted { ($0.mentions ?? 0) > ($1.mentions ?? 0) }
     }
 
+    /// 指定 ID 的视频，按推荐次数排序（“有字幕”分类用）
+    func videos(ids: Set<String>) -> [Video] {
+        videos.filter { ids.contains($0.id) }.sorted { ($0.mentions ?? 0) > ($1.mentions ?? 0) }
+    }
+
     func videos(duration: DurationBucket) -> [Video] {
         videos.filter { $0.durationBucket == duration }.sorted { ($0.mentions ?? 0) > ($1.mentions ?? 0) }
     }
