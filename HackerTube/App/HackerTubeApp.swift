@@ -23,7 +23,8 @@ struct RootView: View {
             Tab("长视频", systemImage: "film.stack") { NavStack { LongsView() } }
             Tab("分类", systemImage: "square.grid.2x2") { NavStack { CategoriesView() } }
             Tab("媒体库", systemImage: "books.vertical") { NavStack { LibraryView() } }
-            Tab(role: .search) { NavStack { SearchView() } }
+            // 搜索标签的输入框长在标签栏里，在这里隐藏标签栏会让推进来的页面变成空白
+            Tab(role: .search) { NavStack { SearchView() }.environment(\.hidesTabBarOnPlayer, false) }
         }
     }
 }
@@ -42,3 +43,8 @@ struct NavStack<Content: View>: View {
 }
 
 struct CategoryRoute: Hashable { let name: String }
+
+extension EnvironmentValues {
+    /// 播放页是否隐藏底部标签栏（搜索标签里不能隐藏）
+    @Entry var hidesTabBarOnPlayer = true
+}

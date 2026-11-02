@@ -8,6 +8,7 @@ struct PlayerScreen: View {
     @Environment(LibraryStore.self) private var library
     @AppStorage("subtitleMode") private var modeRaw = SubtitleMode.bilingual.rawValue
     @AppStorage("subtitleScale") private var subtitleScale = 1.0
+    @Environment(\.hidesTabBarOnPlayer) private var hidesTabBar
 
     @State private var player = YouTubePlayerController()
     @State private var subs: SubtitleModel
@@ -57,7 +58,7 @@ struct PlayerScreen: View {
         }
         .onDisappear { library.recordWatch(video.id, position: player.currentTime) }
         .sheet(isPresented: $showPlaylistPicker) { PlaylistPicker(videoID: video.id) }
-        .toolbar(.hidden, for: .tabBar)   // 播放页不显示底部标签栏，避免盖住相关视频
+        .toolbar(hidesTabBar ? .hidden : .automatic, for: .tabBar)   // 播放页不显示底部标签栏，避免盖住相关视频
     }
 
     // MARK: 播放器 + 字幕层

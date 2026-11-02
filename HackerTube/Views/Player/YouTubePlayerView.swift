@@ -92,14 +92,18 @@ struct YouTubePlayerView: UIViewRepresentable {
         <script>
         var player, timer;
         function post(m){window.webkit.messageHandlers.yt.postMessage(m)}
+        // 字幕由 App 自己画；中文系统下 YouTube 会自动打开翻译字幕，会和 App 字幕叠在一起
+        function hideCC(){try{player.setOption('captions','track',{});player.unloadModule('captions');player.unloadModule('cc');}catch(e){}}
         function onYouTubeIframeAPIReady(){
           player = new YT.Player('p',{
             videoId:'\(videoID)',
             playerVars:{playsinline:1,fs:0,rel:0,modestbranding:1,cc_load_policy:0,iv_load_policy:3,start:\(start),autoplay:1,origin:'\(AppConfig.embedOrigin)'},
             events:{
               onReady:function(e){post({type:'ready',d:player.getDuration()});
-                timer=setInterval(function(){post({type:'time',t:player.getCurrentTime(),d:player.getDuration()})},200);},
-              onStateChange:function(e){post({type:'state',s:e.data})},
+                timer=setInterval(function(){post({type:'time',t:player.getCurrentTime(),d:player.getDuration()})},200);
+                setTimeout(hideCC,0);},
+              onStateChange:function(e){if(e.data==1){hideCC();setTimeout(hideCC,1000);setTimeout(hideCC,3000);}post({type:'state',s:e.data})},
+              onApiChange:function(){hideCC()},
               onError:function(e){post({type:'error',code:e.data})}
             }});
         }
