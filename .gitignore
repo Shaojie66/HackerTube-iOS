@@ -6,3 +6,4 @@ build/
 tools/.venv/
 tools/out/
 __pycache__/
+HackerTube/Info.plist

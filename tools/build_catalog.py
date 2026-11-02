@@ -2,23 +2,41 @@
 """
 把 HackerTube 导出的数据转换成 App 用的 data/catalog.json。
 
-    python3 tools/build_catalog.py <导出文件或解压后的目录> --out data/catalog.json
+官方导出包（https://hackertube.org/data → hackertube-data.zip）里的 videos.jsonl
+不含时长和发布日期（YouTube 条款不允许再分发），这两项用 tools/fetch_site_meta.py
+从网站 /api/list 拉下来，再用 --meta 合并：
 
-导出包的具体格式拿到后再对齐；这里先按常见字段名做了兼容（JSON / JSONL / CSV）。
+    python3 tools/fetch_site_meta.py --out /tmp/ht/youtube_meta.json
+    python3 tools/build_catalog.py /tmp/ht/videos.jsonl --meta /tmp/ht/youtube_meta.json --out data/catalog.json
+
+也兼容其它常见字段名（JSON / JSONL / CSV）。
 """
 import argparse, csv, json, re, sys
 from pathlib import Path
 
 ALIASES = {
-    "id": ["id", "video_id", "videoId", "youtube_id", "yt_id"],
+    "id": ["vid", "id", "video_id", "videoId", "youtube_id", "yt_id"],
     "title": ["title", "video_title", "name"],
     "channel": ["channel", "channel_title", "channelTitle", "author", "uploader"],
-    "duration": ["duration", "duration_s", "duration_sec", "seconds", "length"],
+    "duration": ["duration_s", "duration", "duration_s", "duration_sec", "seconds", "length"],
     "published": ["published", "published_at", "publishedAt", "upload_date", "date"],
     "categories": ["categories", "category", "topics", "topic", "tags"],
     "mentions": ["mentions", "num_comments", "comment_count", "hn_mentions", "score", "count"],
     "hnURL": ["hn_url", "hnURL", "hn_link", "comment_url"],
 }
+
+
+def flatten(row):
+    """HackerTube 官方 videos.jsonl：categories 是对象数组，HN 数据嵌在 hn / quote 里。"""
+    cats = row.get("categories")
+    if isinstance(cats, list) and cats and isinstance(cats[0], dict):
+        row = {**row, "categories": [c.get("name") or c.get("id") for c in cats]}
+    if isinstance(row.get("hn"), dict) and "mentions" not in row:
+        row = {**row, "mentions": row["hn"].get("mentions")}
+    q = row.get("quote")
+    if isinstance(q, dict) and q.get("hn_comment_id") and "hn_url" not in row:
+        row = {**row, "hn_url": f"https://news.ycombinator.com/item?id={q['hn_comment_id']}"}
+    return row
 
 
 def pick(row, key):
@@ -67,10 +85,17 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("src")
     ap.add_argument("--out", default="data/catalog.json")
+    ap.add_argument("--meta", help="补充时长/发布日期的 JSON（fetch_site_meta.py 的输出）")
     a = ap.parse_args()
 
+    rows = [flatten(r) for r in load_rows(Path(a.src))]
+    if a.meta:
+        meta = {m.get("vid") or m.get("id"): m for m in json.load(open(a.meta, encoding="utf-8"))}
+        rows = [{**{k: v for k, v in meta.get(r.get("vid") or r.get("id"), {}).items()
+                    if k in ("duration_s", "published")}, **r} for r in rows]
+
     videos = {}
-    for r in load_rows(Path(a.src)):
+    for r in rows:
         vid = pick(r, "id")
         if not vid or not re.fullmatch(r"[\w-]{11}", str(vid)):
             continue
