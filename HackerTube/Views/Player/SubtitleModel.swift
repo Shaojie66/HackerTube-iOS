@@ -86,13 +86,19 @@ final class SubtitleModel {
         }
     }
 
-    /// 当前要显示的一句。有自带中文时，中英各按自己的时间轴找，再拼成一条给字幕层显示。
+    /// 当前要显示的一句。有自带中文时，以中文的时间轴为准：中文出现时配上和它重叠最多的那句英文，
+    /// 中文消失时英文也一起消失，不会出现中文先走、英文还挂着的情况。
+    /// 只有某段时间完全没有中文字幕时，才单独显示英文。
     func cue(at time: Double) -> SubtitleCue? {
         guard !nativeZh.isEmpty else { return cues.cue(at: time) }
-        let en = cues.cue(at: time), zh = nativeZh.cue(at: time)
-        guard en != nil || zh != nil else { return nil }
-        return SubtitleCue(id: (en?.id ?? -1) &* 100_000 &+ (zh?.id ?? -1),
-                           start: time, end: time, en: en?.en ?? "", zh: zh?.zh)
+        if let zh = nativeZh.cue(at: time) {
+            let en = cues.bestOverlap(start: zh.start, end: zh.end)
+            return SubtitleCue(id: zh.id, start: zh.start, end: zh.end, en: en?.en ?? "", zh: zh.zh)
+        }
+        if let en = cues.cue(at: time), nativeZh.bestOverlap(start: en.start, end: en.end) == nil {
+            return SubtitleCue(id: -1 - en.id, start: en.start, end: en.end, en: en.en, zh: nil)
+        }
+        return nil
     }
 }
 

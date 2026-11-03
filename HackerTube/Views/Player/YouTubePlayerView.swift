@@ -94,13 +94,25 @@ struct YouTubePlayerView: UIViewRepresentable {
         function post(m){window.webkit.messageHandlers.yt.postMessage(m)}
         // 字幕由 App 自己画；中文系统下 YouTube 会自动打开翻译字幕，会和 App 字幕叠在一起
         function hideCC(){try{player.setOption('captions','track',{});player.unloadModule('captions');player.unloadModule('cc');}catch(e){}}
+        // 卡住自救：显示“正在播放”但进度 3 秒不动，或一直缓冲超过 8 秒，就原地重新 seek 一下再播放
+        var lastT=-1, sameTicks=0, bufTicks=0;
+        function tick(){
+          var t=player.getCurrentTime(), s=player.getPlayerState();
+          post({type:'time',t:t,d:player.getDuration()});
+          if(s==1 && Math.abs(t-lastT)<0.01){sameTicks++}else{sameTicks=0}
+          if(s==3){bufTicks++}else{bufTicks=0}
+          lastT=t;
+          if(sameTicks>=15 || bufTicks>=40){sameTicks=0;bufTicks=0;
+            try{player.seekTo(t+0.05,true);player.playVideo();}catch(e){}
+            post({type:'stall',t:t});}
+        }
         function onYouTubeIframeAPIReady(){
           player = new YT.Player('p',{
             videoId:'\(videoID)',
             playerVars:{playsinline:1,fs:0,rel:0,modestbranding:1,cc_load_policy:0,iv_load_policy:3,start:\(start),autoplay:1,origin:'\(AppConfig.embedOrigin)'},
             events:{
               onReady:function(e){post({type:'ready',d:player.getDuration()});
-                timer=setInterval(function(){post({type:'time',t:player.getCurrentTime(),d:player.getDuration()})},200);
+                timer=setInterval(tick,200);
                 setTimeout(hideCC,0);},
               onStateChange:function(e){if(e.data==1){hideCC();setTimeout(hideCC,1000);setTimeout(hideCC,3000);}post({type:'state',s:e.data})},
               onApiChange:function(){hideCC()},

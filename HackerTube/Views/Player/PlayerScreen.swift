@@ -44,6 +44,10 @@ struct PlayerScreen: View {
             }
         }
         .navigationBarTitleDisplayMode(.inline)
+        // 播放器上方是黑底：导航栏也用黑底，状态栏的时间和信号才会变成白色、看得清
+        .toolbarBackground(.black, for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
+        .toolbarColorScheme(.dark, for: .navigationBar)
         .toolbar { subtitleMenu }
         .task {
             if startAt == 0 { startAt = library.lastPosition(video.id) }
@@ -179,8 +183,12 @@ struct SubtitleOverlay: View {
                 Text(zh).font(.system(size: 17 * scale, weight: .semibold))
             }
             if !cue.en.isEmpty, mode == .bilingual || mode == .english || (mode == .chinese && cue.zh == nil) {
-                Text(cue.en).font(.system(size: (mode == .bilingual ? 14 : 16) * scale))
-                    .foregroundStyle(.white.opacity(mode == .bilingual ? 0.85 : 1))
+                // 上面有中文时英文只是对照：字号小一号、最多两行；只有英文一行时用正常字号
+                let small = mode == .bilingual && cue.zh != nil
+                Text(cue.en).font(.system(size: (small ? 11.5 : 16) * scale))
+                    .foregroundStyle(.white.opacity(small ? 0.8 : 1))
+                    .lineLimit(small ? 2 : nil)
+                    .minimumScaleFactor(small ? 0.85 : 1)
             }
         }
         .foregroundStyle(.white)
