@@ -184,10 +184,12 @@ struct SubtitleOverlay: View {
             }
             if !cue.en.isEmpty, mode == .bilingual || mode == .english || (mode == .chinese && cue.zh == nil) {
                 // 双语时英文只是对照：字号小一号、最多两行，长句缩小一点再截断，不让字幕盖住大半个画面
-                Text(cue.en).font(.system(size: (mode == .bilingual ? 11.5 : 16) * scale))
-                    .foregroundStyle(.white.opacity(mode == .bilingual ? 0.8 : 1))
-                    .lineLimit(mode == .bilingual ? 2 : nil)
-                    .minimumScaleFactor(mode == .bilingual ? 0.85 : 1)
+                // 上面有中文时英文只是对照：字号小一号、最多两行；只有英文一行时用正常字号
+                let small = mode == .bilingual && cue.zh != nil
+                Text(cue.en).font(.system(size: (small ? 11.5 : 16) * scale))
+                    .foregroundStyle(.white.opacity(small ? 0.8 : 1))
+                    .lineLimit(small ? 2 : nil)
+                    .minimumScaleFactor(small ? 0.85 : 1)
             }
         }
         .foregroundStyle(.white)
