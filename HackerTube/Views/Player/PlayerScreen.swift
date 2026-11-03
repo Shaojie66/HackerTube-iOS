@@ -183,8 +183,11 @@ struct SubtitleOverlay: View {
                 Text(zh).font(.system(size: 17 * scale, weight: .semibold))
             }
             if !cue.en.isEmpty, mode == .bilingual || mode == .english || (mode == .chinese && cue.zh == nil) {
-                Text(cue.en).font(.system(size: (mode == .bilingual ? 14 : 16) * scale))
-                    .foregroundStyle(.white.opacity(mode == .bilingual ? 0.85 : 1))
+                // 双语时英文只是对照：字号小一号、最多两行，长句缩小一点再截断，不让字幕盖住大半个画面
+                Text(cue.en).font(.system(size: (mode == .bilingual ? 11.5 : 16) * scale))
+                    .foregroundStyle(.white.opacity(mode == .bilingual ? 0.8 : 1))
+                    .lineLimit(mode == .bilingual ? 2 : nil)
+                    .minimumScaleFactor(mode == .bilingual ? 0.85 : 1)
             }
         }
         .foregroundStyle(.white)

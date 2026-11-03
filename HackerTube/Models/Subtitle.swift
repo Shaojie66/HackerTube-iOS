@@ -35,4 +35,22 @@ extension Array where Element == SubtitleCue {
         }
         return nil
     }
+
+    /// 和 [start, end) 重叠时间最长的一句；重叠不到 0.2 秒的不算
+    func bestOverlap(start: Double, end: Double) -> SubtitleCue? {
+        // 先二分找到第一句 end > start 的位置，再往后看到 start >= end 为止
+        var lo = 0, hi = count
+        while lo < hi {
+            let mid = (lo + hi) / 2
+            if self[mid].end <= start { lo = mid + 1 } else { hi = mid }
+        }
+        var best: SubtitleCue?, bestLen = 0.2
+        var i = lo
+        while i < count, self[i].start < end {
+            let len = Swift.min(end, self[i].end) - Swift.max(start, self[i].start)
+            if len > bestLen { best = self[i]; bestLen = len }
+            i += 1
+        }
+        return best
+    }
 }
